@@ -24,9 +24,27 @@ class image_converter:
     # initialize the bridge between openCV and ROS
     self.bridge = CvBridge()
 
+    # initialize publisher to send joint angels to robot
+    self.joint2_pub = rospy.Publisher("/robot/joint2_position_controller/command", Float64, queue_size = 10)
+    self.joint3_pub = rospy.Publisher("/robot/joint3_position_controller/command", Float64, queue_size = 10)
+    self.joint4_pub = rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size = 10)
+
 
   # Recieve data from camera 1, process it, and publish
   def callback1(self,data):
+
+    # move the three joints in sinusoidal signals
+    self.joint2 = 0.5 * np.pi * np.sin(np.pi * rospy.get_time() / 15)
+    self.joint3 = 0.5 * np.pi * np.sin(np.pi * rospy.get_time() / 18)
+    self.joint4 = 0.5 * np.pi * np.sin(np.pi * rospy.get_time() / 20)
+    try:
+      self.joint2_pub.publish(self.joint2)
+      self.joint3_pub.publish(self.joint3)
+      self.joint4_pub.publish(self.joint4)
+    except CvBridgeError as e:
+      print(e)
+
+
     # Recieve the image
     try:
       self.cv_image1 = self.bridge.imgmsg_to_cv2(data, "bgr8")
