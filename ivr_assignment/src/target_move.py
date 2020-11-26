@@ -21,7 +21,7 @@ def move():
   t0 = rospy.get_time()
   while not rospy.is_shutdown():
     cur_time = np.array([rospy.get_time()])-t0
-    #y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
+    # y_d = float(6 + np.absolute(1.5* np.sin(cur_time * np.pi/100)))
     x_d = 2.5* np.cos(cur_time * np.pi/15)
     y_d = 2.5* np.sin(cur_time * np.pi/15)
     z_d = 1* np.sin(cur_time * np.pi/15)
