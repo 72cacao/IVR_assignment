@@ -104,31 +104,34 @@ class RobotControl:
         return q_d
 
     def callback(self):
-         q = self.ClosedLoopControl(self.joints, self.end_pos, self.target_pos)
+        print("Forward Kinematics: ")
+        print(self.ForwardKinematics(self.joints))
 
-         self.joint1 = Float64()
-         self.joint2 = Float64()
-         self.joint3 = Float64()
-         self.joint4 = Float64()
-         self.joint1.data = q[0]
-         self.joint2.data = q[1]
-         self.joint3.data = q[2]
-         self.joint4.data = q[3]
+        q = self.ClosedLoopControl(self.joints, self.end_pos, self.target_pos)
 
-         self.robot_joint1_pub.publish(self.joint1)
-         self.robot_joint2_pub.publish(self.joint2)
-         self.robot_joint3_pub.publish(self.joint3)
-         self.robot_joint4_pub.publish(self.joint4)
+        self.joint1 = Float64()
+        self.joint2 = Float64()
+        self.joint3 = Float64()
+        self.joint4 = Float64()
+        self.joint1.data = q[0]
+        self.joint2.data = q[1]
+        self.joint3.data = q[2]
+        self.joint4.data = q[3]
 
-         rospy.Rate(30).sleep()
+        self.robot_joint1_pub.publish(self.joint1)
+        self.robot_joint2_pub.publish(self.joint2)
+        self.robot_joint3_pub.publish(self.joint3)
+        self.robot_joint4_pub.publish(self.joint4)
+
+        rospy.Rate(30).sleep()
 
 def main(args):
-  rc = RobotControl()
-  try:
+    rc = RobotControl()
+    try:
     rospy.spin()
-  except KeyboardInterrupt:
+    except KeyboardInterrupt:
     print("Shutting down")
-  # cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
 # run the code if the node is called
 if __name__ == '__main__':
