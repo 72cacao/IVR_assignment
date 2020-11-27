@@ -36,7 +36,7 @@ class image_converter:
     self.x_z_positions_sub = rospy.Subscriber("/robot/x_z_pos", Float64MultiArray, self.callback2)
 
     # initialize publisher to public joints values
-    self.joints_value_pub = rospy.Publisher("/robot/joints_value", Float64MultiArray, queue_size = 10)
+    self.joints_value_pub = rospy.Publisher("/robot/estimate_joints_value", Float64MultiArray, queue_size = 10)
 
     # load template for sphere
     self.template_sphere = cv2.imread("template_sphere.png", 0)
@@ -300,9 +300,9 @@ class image_converter:
     self.joint3 = Float64()
     self.joint4 = Float64()
 
-    self.joint2.data = 0.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 15)
-    self.joint3.data = -0.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 18)
-    self.joint4.data = -0.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 20)
+    self.joint2.data =  0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 15)
+    self.joint3.data =  0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 18)
+    self.joint4.data =  0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 20)
     try:
       self.joint2_pub.publish(self.joint2)
       self.joint3_pub.publish(self.joint3)

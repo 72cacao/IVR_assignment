@@ -27,10 +27,10 @@ class RobotControl:
         self.target_pos = []
 
         # initialize subscribers
-        self.target_sub = rospy.Subscriber("/target_pos",Float64MultiArray, self.set_target)
-        #self.joints_value_sub = rospy.Subscriber("/robot/joints_value",Float64MultiArray, self.set_joints)
-        self.end_effector_sub = rospy.Subscriber("/end_pos",Float64MultiArray,self.set_EndEffector)
-        self.end_effector_sub2 = rospy.Subscriber("/end_pos",Float64MultiArray,self.callback)
+        self.target_sub = rospy.Subscriber("/robot/target_pos",Float64MultiArray, self.set_target)
+        #self.joints_value_sub = rospy.Subscriber("/robot/estimate_joints_value",Float64MultiArray, self.set_joints)
+        self.end_effector_sub = rospy.Subscriber("/robot/end_pos",Float64MultiArray,self.set_EndEffector)
+        self.end_effector_sub2 = rospy.Subscriber("/robot/end_pos",Float64MultiArray,self.callback)
 
         # initialize errors
         self.time_previous_step = np.array([rospy.get_time()], dtype='float64')
