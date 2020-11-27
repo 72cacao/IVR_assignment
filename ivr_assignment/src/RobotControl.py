@@ -28,7 +28,7 @@ class RobotControl:
 
         # initialize subscribers
         self.target_sub = rospy.Subscriber("/target_pos",Float64MultiArray, self.set_target)
-        self.joints_value_sub = rospy.Subscriber("/robot/joints_value",Float64MultiArrayself.set_joints)
+        #self.joints_value_sub = rospy.Subscriber("/robot/joints_value",Float64MultiArray, self.set_joints)
         self.end_effector_sub = rospy.Subscriber("/end_pos",Float64MultiArray,self.set_EndEffector)
         self.end_effector_sub2 = rospy.Subscriber("/end_pos",Float64MultiArray,self.callback)
 
@@ -128,9 +128,9 @@ class RobotControl:
 def main(args):
     rc = RobotControl()
     try:
-    rospy.spin()
+        rospy.spin()
     except KeyboardInterrupt:
-    print("Shutting down")
+        print("Shutting down")
     # cv2.destroyAllWindows()
 
 # run the code if the node is called

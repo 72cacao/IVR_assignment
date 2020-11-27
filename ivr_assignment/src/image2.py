@@ -26,11 +26,14 @@ class image_converter:
     # initialize a publisher to send x_z_pisitions of circles and targets to image1 node 
     self.x_z_positions_pub = rospy.Publisher("robot/x_z_pos", Float64MultiArray, queue_size = 10)
 
+    # load template for sphere
+    self.template_sphere = cv2.imread("template_sphere.png", 0)
+
 
   # detect the red circle center
   def detect_red(self,image):
       # Isolate the red colour in the image as a binary image
-      mask = cv2.inRange(image, (0, 0, 100), (0, 0, 255))
+      mask = cv2.inRange(image, (0, 0, 100), (5, 5, 255))
       kernel = np.ones((5, 5), np.uint8)
 
       # Obtain the moments of the binary image
@@ -49,7 +52,7 @@ class image_converter:
   # detect the green circle center
   def detect_green(self,image):
       # Isolate the green colour in the image as a binary image
-      mask = cv2.inRange(image, (0, 100, 0), (0, 255, 0))
+      mask = cv2.inRange(image, (0, 100, 0), (5, 255, 5))
       kernel = np.ones((5, 5), np.uint8)
 
       # Obtain the moments of the binary image
@@ -68,7 +71,7 @@ class image_converter:
   # detect the blue circle center
   def detect_blue(self,image):
       # Isolate the blue colour in the image as a binary image
-      mask = cv2.inRange(image, (100, 0, 0), (255, 0, 0))
+      mask = cv2.inRange(image, (100, 0, 0), (255, 5, 5))
       kernel = np.ones((5, 5), np.uint8)
 
       # Obtain the moments of the binary image
@@ -103,6 +106,14 @@ class image_converter:
         cx, cy = int(0), int(0)
       return np.array([cx, cy])
 
+  # detect the orange sphere target
+  def detect_target(self, image):
+    # use template matching to find target
+    mask = cv2.inRange(image,(3,30,60), (20,150,255))
+    res = cv2.matchTemplate(mask, self.template_sphere, cv2.TM_CCOEFF)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    return np.array([max_loc[0], max_loc[1]])
+
 
   # Recieve data, process it, and publish
   def callback2(self,data):
@@ -128,10 +139,11 @@ class image_converter:
     self.x_z_blue = self.detect_blue(self.cv_image2)
     self.x_z_green = self.detect_green(self.cv_image2)
     self.x_z_red = self.detect_red(self.cv_image2)
-
+    self.x_z_target = self.detect_target(self.cv_image2)
+    
     self.x_z_positions = Float64MultiArray()
     self.x_z_positions.data = np.array([self.x_z_yellow[0], self.x_z_yellow[1], self.x_z_blue[0], self.x_z_blue[1], 
-                                       self.x_z_green[0], self.x_z_green[1], self.x_z_red[0], self.x_z_red[1]])
+                                       self.x_z_green[0], self.x_z_green[1], self.x_z_red[0], self.x_z_red[1], self.x_z_target[0],self.x_z_target[1]])
 
     try:
       self.x_z_positions_pub.publish(self.x_z_positions)

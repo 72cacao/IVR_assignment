@@ -38,12 +38,22 @@ class image_converter:
     # initialize publisher to public joints values
     self.joints_value_pub = rospy.Publisher("/robot/joints_value", Float64MultiArray, queue_size = 10)
 
+    # load template for sphere
+    self.template_sphere = cv2.imread("template_sphere.png", 0)
+
+    # initialize publisher to public target position
+    self.target_pos_pub = rospy.Publisher("/robot/target_pos", Float64MultiArray, queue_size = 10)
+
+    # initialize publisher to public end effect position
+    self.end_pos_pub = rospy.Publisher("/robot/end_pos",Float64MultiArray, queue_size = 10)
+    
+
 
 
   # detect the red circle center
   def detect_red(self,image):
       # Isolate the red colour in the image as a binary image
-      mask = cv2.inRange(image, (0, 0, 100), (0, 0, 255))
+      mask = cv2.inRange(image, (0, 0, 100), (5, 5, 255))
       kernel = np.ones((5, 5), np.uint8)
 
       # Obtain the moments of the binary image
@@ -61,7 +71,7 @@ class image_converter:
   # detect the green circle center
   def detect_green(self,image):
       # Isolate the green colour in the image as a binary image
-      mask = cv2.inRange(image, (0, 100, 0), (0, 255, 0))
+      mask = cv2.inRange(image, (0, 100, 0), (5, 255, 5))
       kernel = np.ones((5, 5), np.uint8)
 
       # Obtain the moments of the binary image
@@ -79,7 +89,7 @@ class image_converter:
   # detect the blue circle center
   def detect_blue(self,image):
       # Isolate the blue colour in the image as a binary image
-      mask = cv2.inRange(image, (100, 0, 0), (255, 0, 0))
+      mask = cv2.inRange(image, (100, 0, 0), (255, 5, 5))
       kernel = np.ones((5, 5), np.uint8)
 
       # Obtain the moments of the binary image
@@ -113,6 +123,14 @@ class image_converter:
         cx, cy = int(0), int(0)
       return np.array([cx, cy])
   
+  # detect the orange sphere target
+  def detect_target(self, image):
+    # use template matching to find target
+    mask = cv2.inRange(image,(3,30,60), (20,150,255))
+    res = cv2.matchTemplate(mask, self.template_sphere, cv2.TM_CCOEFF)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    return np.array([max_loc[0], max_loc[1]])
+  
   # Calculate the conversion from pixel to meter
   def pixel2meter(self,image):
       # Obtain the centre of each coloured blob
@@ -125,6 +143,8 @@ class image_converter:
   # get the x_z positions of all joints from image2
   def callback2(self,data):
     self.x_z_positions = data.data
+
+
   
   # calculate the joint values
   def calculate_joint_angles(self,image):
@@ -203,11 +223,34 @@ class image_converter:
     elif red_y == 0 and red_z > yellow_z * 1.05 and red_z < yellow_z * 0.95:
       red_y == yellow_x
 
+    # calculate target postion Q2.2
+    y_z_target = self.detect_target(image)
+    self.target_pos = Float64MultiArray()
+    target_x = (self.x_z_positions[8] - yellow_x) * scale 
+    target_y = (y_z_target[0] - yellow_y) * scale
+    target_z = (yellow_z - (y_z_target[1] + self.x_z_positions[9])/2) * scale
+
+    self.target_pos.data = np.array([target_x, target_y, target_z])
+    try:
+      self.target_pos_pub.publish(self.target_pos)
+    except CvBridgeError as e:
+      print(e)
+
+
+
     # transfer into meter coordinate and take joint1 position as base frame
-    self.blue_pos = np.array([blue_x - yellow_x, blue_y - yellow_y, yellow_z - blue_z]) 
-    self.green_pos = np.array([green_x - yellow_x, green_y - yellow_y, yellow_z - green_z]) 
-    self.red_pos = np.array([red_x - yellow_x, red_y - yellow_y, yellow_z - red_z]) 
+    self.blue_pos = np.array([blue_x - yellow_x, blue_y - yellow_y, yellow_z - blue_z]) * scale
+    self.green_pos = np.array([green_x - yellow_x, green_y - yellow_y, yellow_z - green_z]) * scale
+    self.red_pos = np.array([red_x - yellow_x, red_y - yellow_y, yellow_z - red_z]) * scale
     self.yellow_pos = np.array([0,0,0])
+
+    # publish end effect postion
+    self.end_pos = Float64MultiArray()
+    self.end_pos.data = self.red_pos
+    try:
+      self.end_pos_pub.publish(self.end_pos)
+    except CvBridgeError as e:
+      print(e)
 
     # calcualte joint values
     joints2_diff_z3 = np.sqrt((self.blue_pos[1] - self.green_pos[1])**2 + (self.blue_pos[2] - self.green_pos[2])**2)
@@ -217,6 +260,8 @@ class image_converter:
     #  joint2 = -joint2
     joint2 = -np.arctan2(self.green_pos[1] - self.blue_pos[1], self.green_pos[2] - self.blue_pos[2]) 
     joint3 = np.arctan2(-(self.blue_pos[0] - self.green_pos[0]), joints2_diff_z3)
+
+
     self.joints_value = Float64MultiArray()
     self.joints_value.data = np.array([joint2,joint3])
     try:
@@ -238,8 +283,8 @@ class image_converter:
     self.joint3 = Float64()
     self.joint4 = Float64()
 
-    self.joint2.data = 1.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 15)
-    self.joint3.data = 1.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 18)
+    self.joint2.data = 1 # 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 15)
+    self.joint3.data = 1# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 18)
     self.joint4.data = 0# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 20)
     try:
       self.joint2_pub.publish(self.joint2)
