@@ -256,18 +256,35 @@ class image_converter:
     joints2_diff_z3 = np.sqrt((self.blue_pos[1] - self.green_pos[1])**2 + (self.blue_pos[2] - self.green_pos[2])**2)
     joints2_diff_z2 = np.sqrt((self.blue_pos[0] - self.green_pos[0])**2 + (self.blue_pos[2] - self.green_pos[2])**2)
     #joint2 = np.arctan2(np.abs(self.green_pos[1] - self.blue_pos[1]), joints2_diff_z2)
-    #if self.green_pos[1]>self.blue_pos[1]:
-    #  joint2 = -joint2
     joint2 = -np.arctan2(self.green_pos[1] - self.blue_pos[1], self.green_pos[2] - self.blue_pos[2]) 
-    joint3 = np.arctan2(-(self.blue_pos[0] - self.green_pos[0]), joints2_diff_z3)
+    joint3 = np.arctan2(self.green_pos[0] - self.blue_pos[0], joints2_diff_z3)
+
+    # transfer the coordinate of joints from base frame into joint3's frame to calculate joint4
+    rotate1 = self.rotation_x(joint2)
+    rotate2 = self.rotation_y(-joint3)
+
+    new_red_pos = np.dot(np.dot(self.red_pos, rotate1), rotate2)
+    new_green_pos = np.dot(np.dot(self.green_pos, rotate1), rotate2)
+    
+    joint4 = np.arctan2(-(new_red_pos[1] - new_green_pos[1]), new_red_pos[2] - new_green_pos[2])
 
 
     self.joints_value = Float64MultiArray()
-    self.joints_value.data = np.array([joint2,joint3])
+    self.joints_value.data = np.array([joint2,joint3, joint4])
     try:
       self.joints_value_pub.publish(self.joints_value)
     except CvBridgeError as e:
       print(e)
+
+  # rotation matrix 
+  def rotation_x(self,angle):
+    return np.array([[1,0,0],
+                    [0, np.cos(angle), -np.sin(angle)],
+                    [0, np.sin(angle), np.cos(angle)]])
+  def rotation_y(self,angle):
+    return np.array([[np.cos(angle),0,-np.sin(angle)],
+                    [0, 1, 0],
+                    [np.sin(angle), 0, np.cos(angle)]])
 
 
 
@@ -283,9 +300,9 @@ class image_converter:
     self.joint3 = Float64()
     self.joint4 = Float64()
 
-    self.joint2.data = 1 # 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 15)
-    self.joint3.data = 1# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 18)
-    self.joint4.data = 0# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 20)
+    self.joint2.data = 0.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 15)
+    self.joint3.data = -0.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 18)
+    self.joint4.data = -0.5# 0.5 * np.pi * np.sin(np.pi * (rospy.get_time() - self.time) / 20)
     try:
       self.joint2_pub.publish(self.joint2)
       self.joint3_pub.publish(self.joint3)
